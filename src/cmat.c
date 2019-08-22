@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 
 #include "cmat.h"
 
@@ -132,7 +133,7 @@ alloc_table(double** src, int rows, int cols, double** dt, double*** dr)
       break;
     }
 
-    row = (double**)malloc(sizeof(double) * rows);
+    row = (double**)malloc(sizeof(double*) * rows);
     if (row == NULL) {
       ret = CMAT_ERR_NOMEM;
       break;
@@ -192,34 +193,31 @@ format(double val, char* dst, double thr)
   return ret;
 }
 
-static inline int
-fcmp(double a, double b, double coff)
-{
-  int ret;
 
+static inline int
+fcmp(double f1, double f2, double coff)
+{
   double v1;
   int e1;
 
   double v2;
   int e2;
 
-  do {
-    ret = !0;
+  v1 = frexp(f1, &e1);
+  v2 = frexp(f2, &e2);
 
-    v1  = frexp(a, &e1);
-    v2  = frexp(b, &e2);
+  if (e1 == e2) {
+    f1 = v1;
+    f2 = v2;
+  }
 
-    if (e1 != e2) {
-      v1 = a;
-      v2 = b;
-    }
+#if 0
+  if (fabs(f1 - f2) > coff) {
+    printf("%.20f %.20f %.20g\n", f1, f2, fabs(f1 - f2));
+  }
+#endif
 
-    if (fabs(v1 - v2) > coff) break;
-
-    ret = 0;
-  } while (0);
-
-  return ret;
+  return fabs(f1 - f2);
 }
 
 /*
@@ -328,6 +326,8 @@ calc_det(double** row, int sz, double thr, double* dst)
 
   do {
     ret = 0;
+    wt  = NULL;
+    wr  = NULL;
 
     /* alloc work buffer */
     ret = alloc_table(row, sz, sz, &wt, &wr);
@@ -1611,6 +1611,136 @@ cmat_dot(cmat_t* ptr, cmat_t* op, double* dst)
 }
 
 #ifdef DEBUG
+/**
+ * 最大値の取得
+ *
+ * @param ptr  対象の行列オブジェクト
+ * @param dst  最大値を格納する領域
+ *
+ * @return エラーコード
+ *
+ * @note 本関数では絶対値で最大の値を探査する
+ */
+int
+cmat_abs_max(cmat_t* ptr, double* dst)
+{
+  int ret;
+  double max;
+  int r;
+  int c;
+  double* row;
+
+  /*
+   * initialize
+   */
+  ret = 0;
+  max = 0.0f;
+
+  /*
+   * argument check
+   */
+  do {
+    if (ptr == NULL) {
+      ret = CMAT_ERR_BADDR;
+      break;
+    }
+
+    if (dst == NULL) {
+      ret = CMAT_ERR_BADDR;
+      break;
+    }
+  } while (0);
+
+  /*
+   * lookup maximum value
+   */
+  if (!ret) {
+    for (r = 0; r < ptr->rows; r++) {
+      row = ptr->row[r];
+
+      for (c = 0; c < ptr->cols; c++) {
+        if (fabs(row[c]) > fabs(max)) max = row[c];
+      }
+    }
+  }
+
+  /*
+   * put return parameter
+   */
+  if (!ret) {
+    *dst = max;
+  }
+
+  return ret;
+}
+
+/**
+ * 最小値の取得
+ *
+ * @param ptr  対象の行列オブジェクト
+ * @param dst  最小値を格納する領域
+ *
+ * @return エラーコード
+ *
+ * @note 本関数では絶対値で最小の値を探査する
+ */
+int
+cmat_abs_min(cmat_t* ptr, double* dst)
+{
+  int ret;
+  double min;
+  int r;
+  int c;
+  double* row;
+
+  /*
+   * initialize
+   */
+  ret = 0;
+  min = DBL_MAX;
+
+  /*
+   * argument check
+   */
+  do {
+    if (ptr == NULL) {
+      ret = CMAT_ERR_BADDR;
+      break;
+    }
+
+    if (dst == NULL) {
+      ret = CMAT_ERR_BADDR;
+      break;
+    }
+  } while (0);
+
+  /*
+   * lookup minimum value
+   */
+  if (!ret) {
+    if (ptr->rows > 0 && ptr->cols > 0) {
+      for (r = 0; r < ptr->rows; r++) {
+        row = ptr->row[r];
+
+        for (c = 0; c < ptr->cols; c++) {
+          if (fabs(row[c]) < fabs(min)) min = row[c];
+        }
+      }
+    } else {
+      min = 0.0f;
+    }
+  }
+
+  /*
+   * put return parameter
+   */
+  if (!ret) {
+    *dst = min;
+  }
+
+  return ret;
+}
+
 /**
  * 行の置換
  *

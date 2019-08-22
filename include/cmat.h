@@ -42,6 +42,8 @@ int cmat_dot(cmat_t* ptr, cmat_t* op, double* dst);
 int cmat_inverse(cmat_t* ptr, cmat_t** dst);
 int cmat_lu_decomp(cmat_t* ptr, cmat_t** dst, int* piv);
 
+int cmat_abs_max(cmat_t*ptr, double* dst);
+int cmat_abs_min(cmat_t*ptr, double* dst);
 int cmat_permute_row(cmat_t* ptr, int* piv);
 int cmat_permute_column(cmat_t* ptr, int* piv);
 
