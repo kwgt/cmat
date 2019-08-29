@@ -122,6 +122,39 @@ bench_det(tmmes_t* tm)
   cmat_destroy(m);
 }
 
+void
+bench_inverse(tmmes_t* tm)
+{
+  cmat_t* m1;
+  cmat_t* m2;
+  int i;
+  int j;
+  double* row;
+
+  cmat_new(NULL, 100, 100, &m1);
+
+  srand(0);
+  for (i = 0; i < 100; i++) {
+    row = CMAT_ROW(m1, i);
+
+    for (j = 0; j < 100; j++) {
+      row[j] = (float)rand() / RAND_MAX;
+    }
+  }
+
+  start_timer(tm);
+
+  for (i = 0; i < 2000; i++) {
+    cmat_inverse(m1, &m2);
+    cmat_destroy(m2);
+  }
+
+  stop_timer(tm);
+
+  cmat_destroy(m1);
+}
+
+
 int
 main(int argc, char* argv[])
 {
@@ -138,6 +171,9 @@ main(int argc, char* argv[])
 
   bench_det(&tm);
   printf("det     %10.2f msec\n", tm.tm / 1000000.0);
+
+  bench_inverse(&tm);
+  printf("inverse %10.2f msec\n", tm.tm / 1000000.0);
 
   return 0;
 }

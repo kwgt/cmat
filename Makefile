@@ -1,5 +1,7 @@
-CFLAGS    += -O0 -g -I./include -DDEBUG
+CFLAGS    += -O3 -g -I./include -DDEBUG
 LDFLAGS   += -g -L./lib -lcunit
+
+CFLAGS    += -fopenmp
 
 CSRC      := src/cmat.c
 OBJS      := $(patsubst %.c,%.o, $(CSRC))
@@ -19,6 +21,12 @@ src/cmat.c: include/cmat.h
 test:
 	make -C tests
 
+benchmark:
+	make -C tests benchmark
+
 clean:
-	make -C tests $@
 	rm -rf $(dir $(TARGET)) $(OBJS)
+
+clean-test:
+	make -C tests $@
+

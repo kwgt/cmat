@@ -276,6 +276,7 @@ lu_decomp(double** row, int sz, double thr, int* piv)
     if (pi[i] == 0.0) continue;
 
     /* forwarding erase */
+#pragma omp parallel for private(k,pj,tmp)
     for (j = i + 1; j < sz; j++) {
       pj  = row[j];
       tmp = (pj[i] /= pi[i]);
@@ -410,6 +411,7 @@ calc_inverse(double** src, int n, double** dst)
       di[j] *= tmp;
     }
 
+#pragma omp parallel for private(k,sj,dj,tmp)
     for (j = 0; j < n; j++) {
       if (i == j) continue;
 
@@ -874,6 +876,9 @@ cmat_add(cmat_t* ptr, cmat_t* op, cmat_t** dst)
    * do add operation
    */
   if (!ret) {
+#ifdef _OPENMP
+#pragma omp parallel for private(d,s,o,c)
+#endif /* defined(_OPENMP) */
     for (r = 0; r < ptr->rows; r++) {
       d = obj->row[r];
       s = ptr->row[r];
@@ -968,6 +973,9 @@ cmat_sub(cmat_t* ptr, cmat_t* op, cmat_t** dst)
    * do add operation
    */
   if (!ret) {
+#ifdef _OPENMP
+#pragma omp parallel for private(d,s,o,c)
+#endif /* defined(_OPENMP) */
     for (r = 0; r < ptr->rows; r++) {
       d = obj->row[r];
       s = ptr->row[r];
@@ -1054,6 +1062,9 @@ cmat_mul(cmat_t* ptr, double op, cmat_t** dst)
    * do add operation
    */
   if (!ret) {
+#ifdef _OPENMP
+#pragma omp parallel for private(d,s,c)
+#endif /* defined(_OPENMP) */
     for (r = 0; r < ptr->rows; r++) {
       d = obj->row[r];
       s = ptr->row[r];
@@ -1143,7 +1154,9 @@ cmat_product(cmat_t* ptr, cmat_t* op, cmat_t** dst)
    * do multiple operation
    */
   if (!ret) {
-
+#ifdef _OPENMP
+#pragma omp parallel for private(d,s,c)
+#endif /* defined(_OPENMP) */
     for (r = 0; r < ptr->rows; r++) {
       d = obj->row[r];
       s = ptr->row[r];
