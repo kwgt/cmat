@@ -755,16 +755,35 @@ cmat_append(cmat_t* ptr, double* src)
         break;
       }
 
-      row  = (double**)realloc(ptr->row, sizeof(double*) * capa);
+      /* LU分解などで置換が発生している可能性がある。このため既存の行配置
+         を再現する必要がある（==既存の行テーブルを参照する必要がある）の
+         でrealloc()は使わない */
+      row  = (double**)malloc(sizeof(double*) * capa);
       if (row == NULL) {
         ret = CMAT_ERR_NOMEM;
         break;
       }
 
-      for (i = 0; i < capa; i++) {
+      if (ptr->row) {
+        /* 既存の部分の行構成を再現（他の演算でピボット操作で行位置が交換さ
+           れている場合がある） */
+        for (i = 0; i < ptr->capa; i++) {
+          row[i] = tbl + (ptr->row[i] - ptr->tbl);
+        }
+
+        /* 既存行テーブルは不要になったので解放 */
+        free(ptr->row);
+
+      } else {
+        ptr->capa = 0;
+      }
+
+      /* 新規の部分の行構成を設定 */
+      for (i = ptr->capa; i < capa; i++) {
         row[i] = tbl + (i * ptr->cols);
       }
 
+      /* コンテキストの更新 */
       ptr->tbl  = tbl;
       ptr->row  = row;
       ptr->capa = capa;
